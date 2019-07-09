@@ -1,0 +1,23 @@
+# Deployment for ApiV2 service
+# ---
+
+apiVersion: skaffold/v1beta10
+kind: Config
+profiles:
+- name: minikube
+  build:
+    artifacts:
+    - image: api
+      context: ./src/api/
+      docker:
+        dockerfile: build/Dockerfile
+    - image: worker
+      context: ./src/worker/
+      docker:
+        dockerfile: build/Dockerfile
+    tagPolicy:
+      sha256: {}
+  deploy:
+    kubectl:
+      manifests:
+      - ./deployments/*

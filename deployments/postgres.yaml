@@ -1,0 +1,95 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: db 
+  labels:
+    app: db 
+spec:
+  template:
+    metadata:
+      labels:
+        app: db 
+    spec:
+      containers:
+      - name: db 
+        image: "postgres:9.6.2"
+        imagePullPolicy: "IfNotPresent"
+        envFrom:
+          - configMapRef:
+              name: env
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: POSTGRES_INITDB_ARGS
+          value: ""
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        ports:
+        - name: postgresql
+          containerPort: 5432
+          protocol: TCP
+        # livenessProbe:
+        #   exec:
+        #     command:
+        #     - sh
+        #     - -c
+        #     - exec pg_isready --host $POD_IP
+        #   initialDelaySeconds: 120
+        #   timeoutSeconds: 5
+        #   failureThreshold: 6
+        # readinessProbe:
+        #   exec:
+        #     command:
+        #     - sh
+        #     - -c
+        #     - exec pg_isready --host $POD_IP
+        #   initialDelaySeconds: 5
+        #   timeoutSeconds: 3
+        #   periodSeconds: 5
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 100m
+          limits:
+            memory: 512Mi
+            cpu: 200m
+        volumeMounts:
+        - name: pgdata
+          mountPath: "/var/lib/postgresql/data/pgdata"
+      volumes:
+      - name: pgdata
+        persistentVolumeClaim:
+          claimName: db
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db
+  labels:
+    app: db 
+spec:
+  storageClassName: standard
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "4Gi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db 
+  labels:
+    app: db 
+spec:
+  selector:
+    app: db 
+  ports:
+  - port: 5432
+    targetPort: postgresql
+    protocol: TCP

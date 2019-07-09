@@ -1,0 +1,44 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: worker
+  labels:
+    app: worker
+spec:
+  selector:
+    matchLabels:
+      app: worker
+  replicas: 1
+  strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
+      type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+      - name: worker
+        image: worker
+        imagePullPolicy: Never
+        resources:
+          requests:
+            memory: 2056Mi
+            cpu: 1000m
+        envFrom:
+          - configMapRef:
+              name: env
+        volumeMounts:
+        - mountPath: "/data"
+          name: data
+        - mountPath: "/models"
+          name: models
+      volumes:
+      - name: data
+        hostPath:
+          path: "/data"
+      - name: models
+        hostPath:
+          path: "/models"
